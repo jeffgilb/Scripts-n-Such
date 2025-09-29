@@ -370,7 +370,7 @@ function New-AutologonUser{
            # Add-LocalGroupMember -Group "Administrators" -Member "$($config.Config.NewUser.Name)"
     
            $UserID = Get-LocalUser -Name $($config.Config.NewUser.Name) -ErrorAction SilentlyContinue
-           If($UserID){Log "Successfully created the $($config.Config.MTCUser.Name) local account."}
+           If($UserID){Log "Successfully created the $($config.Config.NewUser.Name) local account."}
            Else{
                Log "Failed to create the $($config.Config.NewUser.Name) local account."
             }
@@ -497,10 +497,6 @@ function Set-Services {
         Log "$AlreadyDisabledCount services were already disabled and $NotInstalledCount were not installed."
     
     }
-
-    
-
-# New edits to validate
 
 function Enable-WindowsFeature {
     $InstalledCount = 0
