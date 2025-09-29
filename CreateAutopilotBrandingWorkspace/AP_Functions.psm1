@@ -1,7 +1,7 @@
 # Display a custom header message when the module is imported
 Write-Host `n"********************************************************************************************"  -ForegroundColor DarkCyan
 Write-Host "   Autopilot Branding Optional Functions PowerShell Module successfully loaded."     -ForegroundColor DarkBlue
-Write-Host "   Version: 1.0.0 | https://github.com/jeffgilb/Scripts-n-Such/blob/main/CreateAutopilotBranding/AP_Functions.psm1" -ForegroundColor DarkBlue
+Write-Host "   Version: 1.0.0 | https://github.com/jeffgilb/Scripts-n-Such/blob/main/CreateAutopilotBrandingWorkspace/AP_Functions.psm1" -ForegroundColor DarkBlue
 Write-Host "********************************************************************************************"`n  -ForegroundColor DarkCyan
 
 function Log() {

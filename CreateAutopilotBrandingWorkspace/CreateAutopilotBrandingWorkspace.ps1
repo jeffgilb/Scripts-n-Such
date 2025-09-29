@@ -1,21 +1,21 @@
 <#
 .SYNOPSIS
-    Automates the management of creating Autopilot branding Visual Studio Code workspaces.
+    Automates the management of Intune Win32 app packaging and management.
 
 .DESCRIPTION
-    This script creates a Visual Studio Code workspace for creating Autopilot Branding Intune Win32 App packaging.
-    It sets up the necessary folders, tasks, and scripts for creating and managing the Intune Win32 App package.
+    This script creates a Visual Studio Code workspace for Intune Win32 App packaging.
+    It sets up the necessary folders, tasks, and scripts for creating and managing Intune Win32 App packages.
     It also includes functionality to download and update the IntuneWinAppUtil.exe tool and decode IntuneWin files.
 
 .PARAMETER outDir
-    The output directory where the workspace and files will be created. Default is the IntuneAP_Branding folder in the user's Documents directory.
+    The output directory where the workspace and files will be created. Default is the location the script is run from.
 
 .PARAMETER workSpaceName
-    The name of the workspace to be created. Default is "AP_Branding".
+    The name of the workspace to be created. Default is "MyApp".
 
 .EXAMPLE
-    .\AutopilotBrandingWorkspace.ps1 -outDir "AP_Branding" -workSpaceName "MyBrandingApp"
-    Creates a workspace named "MyApp" in the "C:\Users\<you>\Documents\AP_Branding" directory.
+    .\IntuneWin32AppSetup.ps1 -outDir "C:\IntuneApps" -workSpaceName "MyApp"
+    Creates a workspace named "MyApp" in the "C:\IntuneApps" directory.
 
 .NOTES
     For best results, run this script in a PowerShell terminal with administrative privileges.
@@ -85,6 +85,12 @@ $tasks = @{
             label = "Download Autopilot Branding Latest Release"
             type = "shell"
             command = "./.vscode/dl_branding.ps1"
+            problemMatcher = "[]"
+        },
+        @{
+            label = "Download the latest PowerShell Module Source File"
+            type = "shell"
+            command = "./.vscode/dl_psm1.ps1"
             problemMatcher = "[]"
         }
     )
@@ -178,9 +184,23 @@ Copy-Item -Path $sourceFile -Destination $destinationFolder -Force
 Write-Output "  Cleaning up temporary files"
 Remove-Item -Path $sourceFolder -Recurse -Force
 Remove-Item -Path $output -Force
-#>
 
-Write-Output "Creating required files..."
+# -------------------------------------- Download the latest PowerShell Module Source File ---------------------------------
+# This script downloads the latest PowerShell module source file from GitHub.
+
+Write-Output 'Downloading the Create Autopilot Branding Workspace PowerShell module source file from GitHub.'
+
+try {
+    # Download latest Create Autopilot Branding Workspace PowerShell module from GitHub with basic error handling
+    $Url = "https://raw.githubusercontent.com/jeffgilb/Scripts-n-Such/refs/heads/main/CreateAutopilotBrandingWorkspace/AP_Functions.psm1"
+    $destFolder = Join-Path $path 'Source'
+    Invoke-WebRequest -Uri $Url -OutFile "$destFolder\AP_Functions.psm1" -UseBasicParsing -ErrorAction Stop
+}
+catch {
+    Write-Error "Copy failed: $($_.Exception.Message)"
+}
+
+Write-Output "Creating required task files..."
 
 # -------------------------------------------- Create the default setup.ps1 file -------------------------------------------
 $setupScript = @"
@@ -526,6 +546,32 @@ Exit
 
 $dl_Branding | Out-File -FilePath "$taskFolderPath\dl_branding.ps1" -Encoding UTF8 -Force
 Write-Output "  Download Autopilot Branding Latest Release task created"
+
+
+# ---------------------------------------- Download Create Autopilot Branding PSM1 ----------------------------------
+$dl_psm1 = @"
+# This script downloads the latest PowerShell module source file from GitHub.
+
+Write-Output ``n
+Write-Output 'Downloading the latest Create Autopilot Branding Workspace PowerShell module source file from GitHub.'
+Write-Output ``n
+
+try {
+    # Download latest Create Autopilot Branding Workspace PowerShell module from GitHub with basic error handling
+    `$Url = "https://raw.githubusercontent.com/jeffgilb/Scripts-n-Such/refs/heads/main/CreateAutopilotBrandingWorkspace/AP_Functions.psm1"
+    `$parentFolder = Split-Path `$PSScriptRoot -Parent
+    `$destFolder = Join-Path `$parentFolder 'Source'
+    Invoke-WebRequest -Uri `$Url -OutFile "`$destFolder\AP_Functions.psm1" -UseBasicParsing -ErrorAction Stop
+}
+catch {
+    Write-Error "Copy failed: `$(`$_.Exception.Message)"
+}
+
+Exit
+"@
+
+$dl_psm1 | Out-File -FilePath "$taskFolderPath\dl_psm1.ps1" -Encoding UTF8 -Force
+Write-Output "  Download Create Autopilot Branding PSM1 task created"
 
 # --------------------------------------------------- Finish up -------------------------------------------------------------
 Write-Output "Intune Win32 App VS Code workspace creation completed"
