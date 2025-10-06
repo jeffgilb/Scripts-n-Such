@@ -4,14 +4,14 @@ Write-Host "   Autopilot Branding Optional Functions PowerShell Module successfu
 Write-Host "   Version: 1.0.0 | https://github.com/jeffgilb/Scripts-n-Such/blob/main/CreateAutopilotBrandingWorkspace/AP_Functions.psm1" -ForegroundColor DarkBlue
 Write-Host "********************************************************************************************"`n  -ForegroundColor DarkCyan
 
-function Log() {
+function Write-Log() {
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $false)] [String] $message
+		[Parameter(Mandatory = $true)] 
+        [String] $message
 	)
-
-	$ts = get-date -f "yyyy/MM/dd hh:mm:ss tt"
-	Write-Output "$ts $message"
+    # Define the log file path in your script!
+	Add-Content -Path $logFilePath -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'):    $message"
 }
 
 function Disable-APv2 {
