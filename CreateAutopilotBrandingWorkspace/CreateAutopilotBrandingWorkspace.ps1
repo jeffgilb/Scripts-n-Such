@@ -219,7 +219,21 @@ $setupScript = @"
    Last Modified:   
 #>
 
+param(
+    [Parameter(Mandatory=`$false, HelpMessage="Specifies the customization XML to be used. If not specified, the script will look for Config.xml in the same directory as the script.")]
+    [String]`$ConfigXML="Config.xml"
+)
+
 #-------------------------------------------------------- Functions ---------------------------------------------------------
+function Log() {
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = `$false)] [String] `$message
+	)
+	`$ts = get-date -f "yyyy/MM/dd hh:mm:ss tt"
+	Write-Output "`$ts `$message"
+}
+
 function Start-64bit {
     if ([Environment]::Is64BitProcess -eq `$false) {
         Write-Output "Re-launching as a 64-bit process..."
@@ -228,21 +242,80 @@ function Start-64bit {
         Exit
     }
 }
-#------------------------------------------------------- Begin Script -------------------------------------------------------
+
+#----------------------------------------------------------- Prep -----------------------------------------------------------
 
 # Start transcript to log the script output where Intune can grab it.
 `$logDir = "`$(`$env:ProgramData)\Microsoft\IntuneManagementExtension\Logs"
-`$logFile = "`$(`$logDir)\win32app.log"    #<-----------Rename this log file to something unique for each script
-Start-Transcript `$logFile               #<-----------The existence of this log file can be used in an app detection rule
+`$logFile = "`$(`$logDir)\AP_Branding.log"  #<-----------Rename this log file to something unique for each script
+Start-Transcript `$logFile                #<-----------The existence of this log file can be used in an app detection rule
 
+# Import autopilot functions module (for current session only)
+`$env:PSModulePath += ";`$PSScriptRoot"
+`$moduleName = 'AP_Functions'
+Import-Module ".\`$moduleName.psm1" -Force 
+`$getModule = Get-Module -Name `$moduleName
+if (! `$getModule) {
+    Write-host "The module '`$moduleName' failed to load."
+}
+
+`$fullPathToXML = "`$(`$PSScriptRoot)\`$ConfigXML"
+[Xml]`$config = Get-Content "`$fullPathToXML"
+# Check if the Config.xml file was loaded successfully
+	if (`$null -eq `$config) {
+		Log "Failed to load Config.xml. Exiting script."
+		Stop-Transcript
+		Exit 1
+	} else {
+		Log "`$ConfigXML loaded successfully."		
+	}
+
+# Get the Current start time in UTC format, so that Time Zone Changes don't affect total runtime calculation
+  `$startUtc = [datetime]::UtcNow
+
+Log "Description             `$(`$config.Config.VersionInfo.Description)"
+Log "Product                 `$(`$config.Config.VersionInfo.Product) `$(`$config.Config.VersionInfo.ProductEdition) `$(`$config.Config.VersionInfo.ProductVersion)"  
+
+Write-Host ``n"-------------------------------------------- BEGIN ---------------------------------------------------"
+Log "Starting `$(`$config.Config.VersionInfo.Name) `$(`$config.Config.VersionInfo.Version) by `$(`$config.Config.VersionInfo.Author)."
+
+<#
 try {
-    # Your script logic goes here
+    # Optional Windows Optional Feature installations
+	if (`$config.Config.<Some Feature> -ine "true") {
+		Log "<Doing some feature thing.>" 
+		<Call Function from AP_Functions.psm1> 
+	} else {
+		Log "Skipping <Some Feature>."
+	}
 } catch {
     Write-Error "An error occurred: `$_"
 }
+#>
 
-Stop-Transcript 
-Exit
+# ---------------------------------------------- Clean Up -------------------------------------------------
+
+`$stopUtc = [datetime]::UtcNow
+# Calculate the total run time
+`$runTime = `$stopUTC - `$startUTC
+# Format the runtime with hours, minutes, and seconds
+if (`$runTime.TotalHours -ge 1) {
+	`$runTimeFormatted = 'Duration: {0:hh} hr {0:mm} min {0:ss} sec' -f `$runTime
+}
+else {
+	`$runTimeFormatted = 'Duration: {0:mm} min {0:ss} sec' -f `$runTime
+}
+
+Write-Host ""
+Log 'Autopilot Branding Complete'
+Log "Total Script `$(`$runTimeFormatted)"
+
+[GC]::Collect()
+
+Stop-Transcript
+Exit 
+
+#-------------------------------------------------------- End Script --------------------------------------------------------
 "@
 $setupScript | Out-File -FilePath "$path\source\setup.ps1" -Encoding UTF8 -Force
 Write-Output "  Default setup file created"
