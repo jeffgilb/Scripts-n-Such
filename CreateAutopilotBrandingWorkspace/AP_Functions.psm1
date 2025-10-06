@@ -5,7 +5,6 @@ Write-Host "   Version: 1.0.0 | https://github.com/jeffgilb/Scripts-n-Such/blob/
 Write-Host "********************************************************************************************"`n  -ForegroundColor DarkCyan
 
 function Write-Log() {
-	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)] 
         [String] $message
