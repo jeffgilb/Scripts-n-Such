@@ -1,21 +1,21 @@
 <#
 .SYNOPSIS
-    Automates the management of Intune Win32 app packaging and management.
+    Automates the creation and management of custom Autopilot Branding Intune Win32 applications.
 
 .DESCRIPTION
-    This script creates a Visual Studio Code workspace for Intune Win32 App packaging.
-    It sets up the necessary folders, tasks, and scripts for creating and managing Intune Win32 App packages.
+    This script creates a Visual Studio Code workspace for creating custom Autopilot Branding Intune Win32 applications.
+    It sets up the necessary folders, tasks, and scripts for creating and managing Autopilot Branding Intune Win32 applications.
     It also includes functionality to download and update the IntuneWinAppUtil.exe tool and decode IntuneWin files.
 
 .PARAMETER outDir
-    The output directory where the workspace and files will be created. Default is the location the script is run from.
+    The output directory where the workspace and files will be created. Default is a directory called IntuneAP_Branding the user's Documents folder.
 
 .PARAMETER workSpaceName
-    The name of the workspace to be created. Default is "MyApp".
+    The name of the workspace to be created. Default is "AP_Branding".
 
 .EXAMPLE
-    .\IntuneWin32AppSetup.ps1 -outDir "C:\IntuneApps" -workSpaceName "MyApp"
-    Creates a workspace named "MyApp" in the "C:\IntuneApps" directory.
+    .\CreateAutopilotBrandingWorkspace.ps1 -outDir "AP_Demo" -workSpaceName "MyAutopilotBranding"
+    Creates a workspace named "MyAutopilotBranding" in the "[.]\Documents\AP_Demo" directory.
 
 .NOTES
     For best results, run this script in a PowerShell terminal with administrative privileges.
