@@ -77,7 +77,6 @@ function Install-Onedrive {
 	}
 }
 
-
 function Remove-Apps {
     # Remove specified apps
     $removeApps = $config.Config.RemoveApps.App
@@ -159,6 +158,18 @@ function New-LAPSadmin{
             }     
        }           
 
+       # Disable the default local administrator account
+       If ($($config.Config.LAPSadmin.DisableDefaultAdmin) -eq "true") {
+            $defaultAdmin = Get-LocalUser -Name "Administrator"
+            If ($defaultAdmin.Enabled) {
+                Disable-LocalUser -Name "Administrator"
+                Log "The default local Administrator account has been disabled."
+            } else {
+                Log "The default local Administrator account is already disabled."
+            }
+        } else {
+            Log "The default local Administrator account will remain enabled."
+        }        
 #----------------------------------------- NOT IN USE -----------------------------------------
 
 function Get-Updates {
@@ -242,6 +253,13 @@ function New-Shortcuts{
     $Shortcut.Save()
     }
  }
+
+function New-Folders{
+    $config.Config.Folders.Folder | ForEach-Object -ErrorAction 'SilentlyContinue' { 
+    New-Item -Path $_ -ItemType Directory -Force | Out-Null
+    }
+ }
+
 
 function edit-registry {
     #Log "Loading NTUSER.DAT file to configure registry settings."
