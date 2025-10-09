@@ -155,8 +155,7 @@ function New-LAPSadmin{
             Else{
                 Log "Failed to create the local LAPS Admin account."
                 }
-            }     
-       }           
+            }                
 
        # Disable the default local administrator account
        If ($($config.Config.LAPSadmin.DisableDefaultAdmin) -eq "true") {
@@ -169,7 +168,8 @@ function New-LAPSadmin{
             }
         } else {
             Log "The default local Administrator account will remain enabled."
-        }        
+        }     
+}   
 #----------------------------------------- NOT IN USE -----------------------------------------
 
 function Get-Updates {
