@@ -114,7 +114,7 @@ $workspace = @{
 $workspaceJson = $workspace | ConvertTo-Json -Depth 10 -Compress
 
 # Write the JSON to the .code-workspace file
-Write-Output "Creating $workSpaceName workspace file..."
+Write-Host "Creating the $workSpaceName Visual Studio Code Workspace..." -ForegroundColor Blue
 
 $workspaceFilePath = Join-Path $path "$workSpaceName.code-workspace"
 Set-Content -Path $workspaceFilePath -Value $workspaceJson -Encoding UTF8 | Out-Null
@@ -642,7 +642,7 @@ $sourceFile = "$($sourceFolder)\intunewinapputil.exe"
 $destinationFolder = Join-Path $outDir $workSpaceName
 
 # Download the latest version of the tool
-Write-Output "Downloading the latest version of IntuneWinAppUtil.exe..."
+Write-Host "Downloading the latest version of IntuneWinAppUtil.exe..."  -ForegroundColor Blue
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile($url, $output)
 Start-Sleep -Seconds 3
@@ -672,7 +672,7 @@ $sourceFile = "$($sourceFolder)\IntuneWinAppUtilDecoder\IntuneWinAppUtilDecoder\
 $destinationFolder = $taskFolderPath
 
 # Download the latest version of the tool
-Write-Output "Downloading the latest version of IntuneWinAppUtilDecoder.exe..."
+Write-Host "Downloading the latest version of IntuneWinAppUtilDecoder.exe..." -ForegroundColor Blue
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile($url, $output)
 Start-Sleep -Seconds 3
@@ -693,7 +693,7 @@ Remove-Item -Path $output -Force
 # -------------------------------------- Download the latest PowerShell Module Source File ---------------------------------
 # This script downloads the latest PowerShell module source file from GitHub.
 
-Write-Output 'Downloading the Create Autopilot Branding Workspace PowerShell module source file from GitHub.'
+Write-Host 'Downloading the Create Autopilot Branding Workspace PowerShell module files from GitHub...' -ForegroundColor Blue
 
 try {
     # Download latest Create Autopilot Branding Workspace PowerShell module from GitHub with basic error handling
@@ -711,7 +711,7 @@ catch {
 }
 
 
-Write-Output "Creating required setup files..."
+Write-Host "Creating required setup files..."  -ForegroundColor Blue
 
 # -------------------------------------------- Create the default setup.ps1 file -------------------------------------------
 $setupScript = @"
@@ -833,15 +833,15 @@ Write-Output "  Default setup file created"
 
 # -------------------------------------------- Create the default config.xml file -------------------------------------------
 
-Write-Host "  Default config.xml file created"
 powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$taskFolderPath\mk_xml.ps1" | Out-Null
+Write-Host "  Default config.xml file created"
 
 # ---------------------------------------------------------------------------------------------------------------------------
 
 #endregion
 
 # --------------------------------------------------- Finish up -------------------------------------------------------------
-Write-Output "Intune Win32 App VS Code workspace creation completed"
+Write-Host `n"Intune Win32 App VS Code workspace creation completed!" -ForegroundColor Green
 Write-Output `n
 $openWorkspace = Read-Host "Do you want to open the workspace in VS Code now? [Y or N]"
 if ($openWorkspace -eq "Y" -or $openWorkspace -eq "y") {
@@ -898,7 +898,7 @@ if ($openWorkspace -eq "Y" -or $openWorkspace -eq "y") {
             Write-Output "Workspace opened in VS Code."
             Write-Output "You can also open the workspace later by double-clicking the $Shortcut created in $outDir"
             Write-Output `n
-            Start-Sleep -seconds 10
+            Start-Sleep -seconds 5
             Exit
         }
     }
@@ -907,6 +907,7 @@ if ($openWorkspace -eq "Y" -or $openWorkspace -eq "y") {
     Write-Output "You chose not to open the workspace." `n
     Write-Output "You can open the workspace later by double-clicking the $workSpaceName workspace shortcut created in $outDir" `n
     Write-Output "Good-bye." `n
+    Start-Sleep -Seconds 5
 }
 
 Exit
