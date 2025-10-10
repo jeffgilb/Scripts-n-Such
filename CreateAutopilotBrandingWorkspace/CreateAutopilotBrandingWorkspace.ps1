@@ -23,6 +23,8 @@
 
 #>
 
+#Region CreateWorkspace
+
 param (
     [Parameter(Mandatory=$false)]
     [string]$workSpaceName = "AP_Branding",
@@ -132,204 +134,9 @@ $taskFolderPath = Join-Path $path ".vscode"
         $hide.attributes = 'Hidden' 
     }
 
-#------------------------------------------------ Grab IntuneWinAppUtil.exe -------------------------------------------------
+#endregion
 
-# Download the latest version of the tool
-# Define variables
-$url = "https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool/archive/refs/heads/master.zip"
-$output = "$($env:temp)\IntuneWinAppUtilMaster.zip"
-$sourceFolder = "$($env:temp)\Microsoft-Win32-Content-Prep-Tool-master"
-$sourceFile = "$($sourceFolder)\intunewinapputil.exe"
-$destinationFolder = Join-Path $outDir $workSpaceName
-
-# Download the latest version of the tool
-Write-Output "Downloading the latest version of IntuneWinAppUtil.exe..."
-$webClient = New-Object System.Net.WebClient
-$webClient.DownloadFile($url, $output)
-Start-Sleep -Seconds 3
-
-# Extract the downloaded archive
-Write-Output "  Extracting the downloaded archive"
-Expand-Archive -Path $output -DestinationPath $env:temp -Force | Out-Null
-
-# Copy the updated version to the destination folder
-Write-Output "  Copying IntuneWinAppUtil.exe to the destination folder"
-Copy-Item -Path $sourceFile -Destination $destinationFolder -Force
-
-# Clean up temporary files
-Write-Output "  Cleaning up temporary files"
-Remove-Item -Path $sourceFolder -Recurse -Force
-Remove-Item -Path $output -Force
-#>
-
-#-------------------------------------------- Grab the IntuneWinAppUtil Decoder ---------------------------------------------
-# https://msendpointmgr.com/2019/01/18/how-to-decode-intune-win32-app-packages/
-
-# Define variables
-$url = "https://github.com/okieselbach/Intune/archive/refs/heads/master.zip"
-$output = "$($env:temp)\IntuneWinAppUtilDecoder.zip"
-$sourceFolder = "$($env:temp)\Intune-master"
-$sourceFile = "$($sourceFolder)\IntuneWinAppUtilDecoder\IntuneWinAppUtilDecoder\bin\Release\IntuneWinAppUtilDecoder.exe"
-$destinationFolder = $taskFolderPath
-
-# Download the latest version of the tool
-Write-Output "Downloading the latest version of IntuneWinAppUtilDecoder.exe..."
-$webClient = New-Object System.Net.WebClient
-$webClient.DownloadFile($url, $output)
-Start-Sleep -Seconds 3
-
-# Extract the downloaded archive
-Write-Output "  Extracting the downloaded archive"
-Expand-Archive -Path $output -DestinationPath $env:temp -Force | Out-Null
-
-# Copy the updated version to the destination folder
-Write-Output "  Copying IntuneWinAppUtilDecoder.exe to the destination folder"
-Copy-Item -Path $sourceFile -Destination $destinationFolder -Force
-
-# Clean up temporary files
-Write-Output "  Cleaning up temporary files"
-Remove-Item -Path $sourceFolder -Recurse -Force
-Remove-Item -Path $output -Force
-
-# -------------------------------------- Download the latest PowerShell Module Source File ---------------------------------
-# This script downloads the latest PowerShell module source file from GitHub.
-
-Write-Output 'Downloading the Create Autopilot Branding Workspace PowerShell module source file from GitHub.'
-
-try {
-    # Download latest Create Autopilot Branding Workspace PowerShell module from GitHub with basic error handling
-    $Url = "https://raw.githubusercontent.com/jeffgilb/Scripts-n-Such/refs/heads/main/CreateAutopilotBrandingWorkspace/AP_Functions.psm1"
-    $destFolder = Join-Path $path 'Source'
-    Invoke-WebRequest -Uri $Url -OutFile "$destFolder\AP_Functions.psm1" -UseBasicParsing -ErrorAction Stop
-
-    # Download latest Create Autopilot Branding Workspace PowerShell module manifest from GitHub with basic error handling
-    $Url = "https://raw.githubusercontent.com/jeffgilb/Scripts-n-Such/refs/heads/main/CreateAutopilotBrandingWorkspace/AP_Functions.psd1"
-    $destFolder = Join-Path $path 'Source'
-    Invoke-WebRequest -Uri $Url -OutFile "$destFolder\AP_Functions.psd1" -UseBasicParsing -ErrorAction Stop
-}
-catch {
-    Write-Error "Copy failed: $($_.Exception.Message)"
-}
-
-Write-Output "Creating required task files..."
-
-# -------------------------------------------- Create the default setup.ps1 file -------------------------------------------
-$setupScript = @"
-<#
-.SYNOPSIS
-
-.DESCRIPTION
-    
-.PARAMETER     
-
-.EXAMPLE
-
-.NOTES
-   Version      : 0.1
-   Author       : 
-   Last Modified:   
-#>
-
-param(
-    [Parameter(Mandatory=`$false, HelpMessage="Specifies the customization XML to be used. If not specified, the script will look for Config.xml in the same directory as the script.")]
-    [String]`$ConfigXML="Config.xml"
-)
-
-#-------------------------------------------------------- Functions ---------------------------------------------------------
-function Log() {
-	[CmdletBinding()]
-	param (
-		[Parameter(Mandatory = `$false)] [String] `$message
-	)
-	`$ts = get-date -f "yyyy/MM/dd hh:mm:ss tt"
-	Write-Output "`$ts `$message"
-}
-
-function Start-64bit {
-    if ([Environment]::Is64BitProcess -eq `$false) {
-        Write-Output "Re-launching as a 64-bit process..."
-        `$arguments = "-NoProfile -ExecutionPolicy Bypass -File `$(`$MyInvocation.MyCommand.Path)"
-        Start-Process powershell.exe -ArgumentList `$arguments -Wait
-        Exit
-    }
-}
-
-#----------------------------------------------------------- Prep -----------------------------------------------------------
-
-# Start transcript to log the script output where Intune can grab it.
-`$logDir = "`$(`$env:ProgramData)\Microsoft\IntuneManagementExtension\Logs"
-`$logFile = "`$(`$logDir)\AP_Branding.log"  #<-----------Rename this log file to something unique for each script
-Start-Transcript `$logFile                #<-----------The existence of this log file can be used in an app detection rule
-
-# Import autopilot functions module (for current session only)
-`$env:PSModulePath += ";`$PSScriptRoot"
-`$moduleName = 'AP_Functions'
-Import-Module ".\`$moduleName.psm1" -Force 
-`$getModule = Get-Module -Name `$moduleName
-if (! `$getModule) {
-    Write-host "The module '`$moduleName' failed to load."
-}
-
-`$fullPathToXML = "`$(`$PSScriptRoot)\`$ConfigXML"
-[Xml]`$config = Get-Content "`$fullPathToXML"
-# Check if the Config.xml file was loaded successfully
-	if (`$null -eq `$config) {
-		Log "Failed to load Config.xml. Exiting script."
-		Stop-Transcript
-		Exit 1
-	} else {
-		Log "`$ConfigXML loaded successfully."		
-	}
-
-# Get the Current start time in UTC format, so that Time Zone Changes don't affect total runtime calculation
-  `$startUtc = [datetime]::UtcNow
-
-Log "Description             `$(`$config.Config.VersionInfo.Description)"
-Log "Product                 `$(`$config.Config.VersionInfo.Product) `$(`$config.Config.VersionInfo.ProductEdition) `$(`$config.Config.VersionInfo.ProductVersion)"  
-
-Write-Host ``n"-------------------------------------------- BEGIN ---------------------------------------------------"
-Log "Starting `$(`$config.Config.VersionInfo.Name) `$(`$config.Config.VersionInfo.Version) by `$(`$config.Config.VersionInfo.Author)."
-
-<#
-try {
-    # Optional Windows Optional Feature installations
-	if (`$config.Config.<Some Feature> -ine "true") {
-		Log "<Doing some feature thing.>" 
-		<Call Function from AP_Functions.psm1> 
-	} else {
-		Log "Skipping <Some Feature>."
-	}
-} catch {
-    Write-Error "An error occurred: `$_"
-}
-#>
-
-# ---------------------------------------------- Clean Up -------------------------------------------------
-
-`$stopUtc = [datetime]::UtcNow
-# Calculate the total run time
-`$runTime = `$stopUTC - `$startUTC
-# Format the runtime with hours, minutes, and seconds
-if (`$runTime.TotalHours -ge 1) {
-	`$runTimeFormatted = 'Duration: {0:hh} hr {0:mm} min {0:ss} sec' -f `$runTime
-}
-else {
-	`$runTimeFormatted = 'Duration: {0:mm} min {0:ss} sec' -f `$runTime
-}
-
-Write-Host ""
-Log 'Autopilot Branding Complete'
-Log "Total Script `$(`$runTimeFormatted)"
-
-[GC]::Collect()
-
-Stop-Transcript
-Exit 
-
-#-------------------------------------------------------- End Script --------------------------------------------------------
-"@
-$setupScript | Out-File -FilePath "$path\source\setup.ps1" -Encoding UTF8 -Force
-Write-Output "  Default setup file created"
+#region CreateTasks
 
 #--------------------------------------------------- Create Make App Task ---------------------------------------------------
 $makeApp = @"
@@ -632,7 +439,7 @@ $dl_Branding | Out-File -FilePath "$taskFolderPath\dl_branding.ps1" -Encoding UT
 Write-Output "  Download Autopilot Branding Latest Release task created"
 
 
-# ---------------------------------------- Download Create Autopilot Branding PSM1 ----------------------------------
+# --------------------------------------- Download Create Autopilot Branding PSM1 Task ------------------------------
 $dl_psm1 = @"
 # This script downloads the latest PowerShell module source file from GitHub.
 
@@ -819,6 +626,220 @@ Exit
 $mk_xml | Out-File -FilePath "$taskFolderPath\mk_xml.ps1" -Encoding UTF8 -Force
 Write-Output "  Create Config.xml task created"
 
+
+#endregion
+
+
+#Region CreateSetupFiles
+#------------------------------------------------ Grab IntuneWinAppUtil.exe -------------------------------------------------
+
+# Download the latest version of the tool
+# Define variables
+$url = "https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool/archive/refs/heads/master.zip"
+$output = "$($env:temp)\IntuneWinAppUtilMaster.zip"
+$sourceFolder = "$($env:temp)\Microsoft-Win32-Content-Prep-Tool-master"
+$sourceFile = "$($sourceFolder)\intunewinapputil.exe"
+$destinationFolder = Join-Path $outDir $workSpaceName
+
+# Download the latest version of the tool
+Write-Output "Downloading the latest version of IntuneWinAppUtil.exe..."
+$webClient = New-Object System.Net.WebClient
+$webClient.DownloadFile($url, $output)
+Start-Sleep -Seconds 3
+
+# Extract the downloaded archive
+Write-Output "  Extracting the downloaded archive"
+Expand-Archive -Path $output -DestinationPath $env:temp -Force | Out-Null
+
+# Copy the updated version to the destination folder
+Write-Output "  Copying IntuneWinAppUtil.exe to the destination folder"
+Copy-Item -Path $sourceFile -Destination $destinationFolder -Force
+
+# Clean up temporary files
+Write-Output "  Cleaning up temporary files"
+Remove-Item -Path $sourceFolder -Recurse -Force
+Remove-Item -Path $output -Force
+#>
+
+#-------------------------------------------- Grab the IntuneWinAppUtil Decoder ---------------------------------------------
+# https://msendpointmgr.com/2019/01/18/how-to-decode-intune-win32-app-packages/
+
+# Define variables
+$url = "https://github.com/okieselbach/Intune/archive/refs/heads/master.zip"
+$output = "$($env:temp)\IntuneWinAppUtilDecoder.zip"
+$sourceFolder = "$($env:temp)\Intune-master"
+$sourceFile = "$($sourceFolder)\IntuneWinAppUtilDecoder\IntuneWinAppUtilDecoder\bin\Release\IntuneWinAppUtilDecoder.exe"
+$destinationFolder = $taskFolderPath
+
+# Download the latest version of the tool
+Write-Output "Downloading the latest version of IntuneWinAppUtilDecoder.exe..."
+$webClient = New-Object System.Net.WebClient
+$webClient.DownloadFile($url, $output)
+Start-Sleep -Seconds 3
+
+# Extract the downloaded archive
+Write-Output "  Extracting the downloaded archive"
+Expand-Archive -Path $output -DestinationPath $env:temp -Force | Out-Null
+
+# Copy the updated version to the destination folder
+Write-Output "  Copying IntuneWinAppUtilDecoder.exe to the destination folder"
+Copy-Item -Path $sourceFile -Destination $destinationFolder -Force
+
+# Clean up temporary files
+Write-Output "  Cleaning up temporary files"
+Remove-Item -Path $sourceFolder -Recurse -Force
+Remove-Item -Path $output -Force
+
+# -------------------------------------- Download the latest PowerShell Module Source File ---------------------------------
+# This script downloads the latest PowerShell module source file from GitHub.
+
+Write-Output 'Downloading the Create Autopilot Branding Workspace PowerShell module source file from GitHub.'
+
+try {
+    # Download latest Create Autopilot Branding Workspace PowerShell module from GitHub with basic error handling
+    $Url = "https://raw.githubusercontent.com/jeffgilb/Scripts-n-Such/refs/heads/main/CreateAutopilotBrandingWorkspace/AP_Functions.psm1"
+    $destFolder = Join-Path $path 'Source'
+    Invoke-WebRequest -Uri $Url -OutFile "$destFolder\AP_Functions.psm1" -UseBasicParsing -ErrorAction Stop
+
+    # Download latest Create Autopilot Branding Workspace PowerShell module manifest from GitHub with basic error handling
+    $Url = "https://raw.githubusercontent.com/jeffgilb/Scripts-n-Such/refs/heads/main/CreateAutopilotBrandingWorkspace/AP_Functions.psd1"
+    $destFolder = Join-Path $path 'Source'
+    Invoke-WebRequest -Uri $Url -OutFile "$destFolder\AP_Functions.psd1" -UseBasicParsing -ErrorAction Stop
+}
+catch {
+    Write-Error "Copy failed: $($_.Exception.Message)"
+}
+
+
+Write-Output "Creating required setup files..."
+
+# -------------------------------------------- Create the default setup.ps1 file -------------------------------------------
+$setupScript = @"
+<#
+.SYNOPSIS
+
+.DESCRIPTION
+    
+.PARAMETER     
+
+.EXAMPLE
+
+.NOTES
+   Version      : 0.1
+   Author       : 
+   Last Modified:   
+#>
+
+param(
+    [Parameter(Mandatory=`$false, HelpMessage="Specifies the customization XML to be used. If not specified, the script will look for Config.xml in the same directory as the script.")]
+    [String]`$ConfigXML="Config.xml"
+)
+
+#-------------------------------------------------------- Functions ---------------------------------------------------------
+function Log() {
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = `$false)] [String] `$message
+	)
+	`$ts = get-date -f "yyyy/MM/dd hh:mm:ss tt"
+	Write-Output "`$ts `$message"
+}
+
+function Start-64bit {
+    if ([Environment]::Is64BitProcess -eq `$false) {
+        Write-Output "Re-launching as a 64-bit process..."
+        `$arguments = "-NoProfile -ExecutionPolicy Bypass -File `$(`$MyInvocation.MyCommand.Path)"
+        Start-Process powershell.exe -ArgumentList `$arguments -Wait
+        Exit
+    }
+}
+
+#----------------------------------------------------------- Prep -----------------------------------------------------------
+
+# Start transcript to log the script output where Intune can grab it.
+`$logDir = "`$(`$env:ProgramData)\Microsoft\IntuneManagementExtension\Logs"
+`$logFile = "`$(`$logDir)\AP_Branding.log"  #<-----------Rename this log file to something unique for each script
+Start-Transcript `$logFile                #<-----------The existence of this log file can be used in an app detection rule
+
+# Import autopilot functions module (for current session only)
+`$env:PSModulePath += ";`$PSScriptRoot"
+`$moduleName = 'AP_Functions'
+Import-Module ".\`$moduleName.psm1" -Force 
+`$getModule = Get-Module -Name `$moduleName
+if (! `$getModule) {
+    Write-host "The module '`$moduleName' failed to load."
+}
+
+`$fullPathToXML = "`$(`$PSScriptRoot)\`$ConfigXML"
+[Xml]`$config = Get-Content "`$fullPathToXML"
+# Check if the Config.xml file was loaded successfully
+	if (`$null -eq `$config) {
+		Log "Failed to load Config.xml. Exiting script."
+		Stop-Transcript
+		Exit 1
+	} else {
+		Log "`$ConfigXML loaded successfully."		
+	}
+
+# Get the Current start time in UTC format, so that Time Zone Changes don't affect total runtime calculation
+  `$startUtc = [datetime]::UtcNow
+
+Log "Description             `$(`$config.Config.VersionInfo.Description)"
+Log "Product                 `$(`$config.Config.VersionInfo.Product) `$(`$config.Config.VersionInfo.ProductEdition) `$(`$config.Config.VersionInfo.ProductVersion)"  
+
+Write-Host ``n"-------------------------------------------- BEGIN ---------------------------------------------------"
+Log "Starting `$(`$config.Config.VersionInfo.Name) `$(`$config.Config.VersionInfo.Version) by `$(`$config.Config.VersionInfo.Author)."
+
+<#
+try {
+    # Optional Windows Optional Feature installations
+	if (`$config.Config.<Some Feature> -ine "true") {
+		Log "<Doing some feature thing.>" 
+		<Call Function from AP_Functions.psm1> 
+	} else {
+		Log "Skipping <Some Feature>."
+	}
+} catch {
+    Write-Error "An error occurred: `$_"
+}
+#>
+
+# ---------------------------------------------- Clean Up -------------------------------------------------
+
+`$stopUtc = [datetime]::UtcNow
+# Calculate the total run time
+`$runTime = `$stopUTC - `$startUTC
+# Format the runtime with hours, minutes, and seconds
+if (`$runTime.TotalHours -ge 1) {
+	`$runTimeFormatted = 'Duration: {0:hh} hr {0:mm} min {0:ss} sec' -f `$runTime
+}
+else {
+	`$runTimeFormatted = 'Duration: {0:mm} min {0:ss} sec' -f `$runTime
+}
+
+Write-Host ""
+Log 'Autopilot Branding Complete'
+Log "Total Script `$(`$runTimeFormatted)"
+
+[GC]::Collect()
+
+Stop-Transcript
+Exit 
+
+#-------------------------------------------------------- End Script --------------------------------------------------------
+"@
+$setupScript | Out-File -FilePath "$path\source\setup.ps1" -Encoding UTF8 -Force
+Write-Output "  Default setup file created"
+
+# -------------------------------------------- Create the default config.xml file -------------------------------------------
+
+Write-Host "  Default config.xml file created"
+powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "$taskFolderPath\mk_xml.ps1" | Out-Null
+
+# ---------------------------------------------------------------------------------------------------------------------------
+
+#endregion
+
 # --------------------------------------------------- Finish up -------------------------------------------------------------
 Write-Output "Intune Win32 App VS Code workspace creation completed"
 Write-Output `n
@@ -888,7 +909,6 @@ if ($openWorkspace -eq "Y" -or $openWorkspace -eq "y") {
     Write-Output "Good-bye." `n
 }
 
-Start-Sleep -Seconds 10
 Exit
 
 
