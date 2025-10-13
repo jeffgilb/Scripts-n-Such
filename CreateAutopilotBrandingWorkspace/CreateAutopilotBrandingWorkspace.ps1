@@ -512,6 +512,32 @@ ForEach (`$function in `$functions){
     `$FunctionFlags.AppendChild(`$flag) | Out-Null
 }
 
+# LAPS Admin
+`$laps = `$xmlDoc.CreateElement("LAPSAdmin")
+`$root.AppendChild(`$laps) 
+`$LAPSInformation = @("Name","FullName","Description")
+ForEach (`$info in `$LAPSInformation){ 
+    `$info = `$xmlDoc.CreateElement(`$info)
+    `$info.InnerText = ' '
+    `$laps.AppendChild(`$info) | Out-Null
+}
+
+# OEM Info
+`$oem = `$xmlDoc.CreateElement("OEMInfo")
+`$root.AppendChild(`$oem) 
+`$OEMInformation = @("Manufacturer","Model", "SupportURL", "SupportPhone", "SupportHours", "Logo")
+ForEach (`$info in `$OEMInformation){ 
+    `$info = `$xmlDoc.CreateElement(`$info)
+    `$info.InnerText = ' '
+    `$oem.AppendChild(`$info) | Out-Null
+}
+
+
+
+
+
+
+
 # Add Features info
 `$addFeatures = `$xmlDoc.CreateElement("AddFeatures")
 `$root.AppendChild(`$addFeatures)
