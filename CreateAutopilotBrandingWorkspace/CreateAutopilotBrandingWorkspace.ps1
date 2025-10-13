@@ -515,7 +515,7 @@ ForEach (`$function in `$functions){
 # LAPS Admin
 `$laps = `$xmlDoc.CreateElement("LAPSAdmin")
 `$root.AppendChild(`$laps) 
-`$LAPSInformation = @("Name","FullName","Description")
+`$LAPSInformation = @("Name","FullName","Description","Password")
 ForEach (`$info in `$LAPSInformation){ 
     `$info = `$xmlDoc.CreateElement(`$info)
     `$info.InnerText = ' '
@@ -816,14 +816,28 @@ Log "Product                 `$(`$config.Config.VersionInfo.Product) `$(`$config
 Write-Host ``n"-------------------------------------------- BEGIN ---------------------------------------------------"
 Log "Starting `$(`$config.Config.VersionInfo.Name) `$(`$config.Config.VersionInfo.Version) by `$(`$config.Config.VersionInfo.Author)."
 
+
 <#
 try {
     # Optional Windows Optional Feature installations
-	if (`$config.Config.<Some Feature> -ine "true") {
+	if (`$config.Config.FunctionFlags.<Some Feature> -ine "true") {
 		Log "<Doing some feature thing.>" 
 		<Call Function from AP_Functions.psm1> 
 	} else {
 		Log "Skipping <Some Feature>."
+	}
+} catch {
+    Write-Error "An error occurred: `$_"
+}
+#>
+<#
+try {
+    # Optional Cloud LAPS Admin Account Creation
+	if (`$config.Config.FunctionFlags.'New-LAPSadmin' -ine "true") {
+		Log "Configuring Cloud LAPS Admin Account" 
+		New-LAPSadmin 
+	} else {
+		Log "Skipping New-LAPSadmin."
 	}
 } catch {
     Write-Error "An error occurred: `$_"
