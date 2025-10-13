@@ -257,11 +257,11 @@ function New-Shortcuts{
 function New-Folders{
     $config.Config.Folders.Folder | ForEach-Object -ErrorAction 'SilentlyContinue' { 
     New-Item -Path $_ -ItemType Directory -Force | Out-Null
+    Write-Host "...Created folder: $_" 
     }
  }
 
-
-function edit-registry {
+function Edit-Registry {
     #Log "Loading NTUSER.DAT file to configure registry settings."
     reg.exe load HKLM\TempUser "C:\Users\Default\NTUSER.DAT" | Out-Host    
  
@@ -298,7 +298,7 @@ function edit-registry {
  reg.exe unload HKLM\TempUser | Out-Host
 }
 
-function uninstall-apps {
+function Uninstall-Apps {
     [Xml]$Config = Get-Content $fullPathToXML
         # Gather list of built-in apps to remove from config file
         $uninstallPackages = $config.Config.RemovePackages.App
@@ -469,7 +469,7 @@ function New-EventLog{
     Restart-Service -Name EventLog -Force
 }
 
-function exit-code{
+function Exit-Code{
     # This checks that new user is set as autologon
         $regKeyPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
         $account = (Get-ItemProperty -Path $regKeyPath -Name DefaultUserName).DefaultUserName
